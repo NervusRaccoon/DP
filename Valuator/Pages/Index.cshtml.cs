@@ -32,15 +32,12 @@ namespace Valuator.Pages
             string id = Guid.NewGuid().ToString();
 
             string textKey = "TEXT-" + id;
-            //TODO: сохранить в БД text по ключу textKey
             _storage.Store(textKey, text);
 
             string rankKey = "RANK-" + id;
-            //TODO: посчитать rank и сохранить в БД по ключу rankKey
             _storage.Store(rankKey, GetRank(text).ToString());
 
             string similarityKey = "SIMILARITY-" + id;
-            //TODO: посчитать similarity и сохранить в БД по ключу similarityKey
             double similarity = GetSimilarity(text, id);
             _storage.Store(similarityKey, similarity.ToString());
 
