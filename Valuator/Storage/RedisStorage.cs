@@ -7,6 +7,8 @@ namespace Vaculator.Storage
     {
         private IConnectionMultiplexer _connection;
         private IDatabase _db;
+        private string _host = "localhost";
+        private int _port = 6379;
 
         public RedisStorage()
         {
@@ -26,7 +28,7 @@ namespace Vaculator.Storage
 
         public List<string> GetValues(string prefix)
         {
-            var server = _connection.GetServer("localhost", 6379);
+            var server = _connection.GetServer(_host, _port);
             List<string> keys = new List<string>();
             foreach (var key in server.Keys(pattern: prefix + "*"))
             {
