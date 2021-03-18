@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Vaculator.Storage
+namespace Valuator.Storage
 {
     public interface IStorage
     {

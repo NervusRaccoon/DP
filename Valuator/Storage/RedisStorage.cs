@@ -1,7 +1,7 @@
 using StackExchange.Redis;
 using System.Collections.Generic;
 
-namespace Vaculator.Storage
+namespace Valuator.Storage
 {
     public class RedisStorage: IStorage
     {
@@ -10,9 +10,10 @@ namespace Vaculator.Storage
         private string _host = "localhost";
         private int _port = 6379;
 
+
         public RedisStorage()
         {
-            _connection = ConnectionMultiplexer.Connect("localhost");
+            _connection = ConnectionMultiplexer.Connect(_host);
             _db = _connection.GetDatabase();
         }
 

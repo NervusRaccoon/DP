@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
-using Vaculator.Storage;
+using Valuator.Storage;
+using NATS.Client;
+using System.Text;
 
 namespace Valuator.Pages
 {
@@ -31,30 +32,21 @@ namespace Valuator.Pages
 
             string id = Guid.NewGuid().ToString();
 
-            string textKey = "TEXT-" + id;
+            string textKey = Constants.textPref + id;
             _storage.Store(textKey, text);
 
-            string rankKey = "RANK-" + id;
-            _storage.Store(rankKey, GetRank(text).ToString());
-
-            string similarityKey = "SIMILARITY-" + id;
+            string similarityKey = Constants.simPref + id;
             double similarity = GetSimilarity(text, id);
             _storage.Store(similarityKey, similarity.ToString());
 
+            CreateRankCalculatorTask(id);
+
             return Redirect($"summary?id={id}");
-        }
-
-        private double GetRank(string text)
-        {
-            var count = text.Where(x => !Char.IsLetter(x)).Count();
-            double rank = (double) count / text.Count();
-
-            return rank;
         }
         private double GetSimilarity(string text, string id)
         {
-            id = "TEXT-" + id;
-            var keys = _storage.GetValues("TEXT-");
+            id = Constants.textPref + id;
+            var keys = _storage.GetValues(Constants.textPref);
             foreach (var key in keys)
             {
                 if(key != id && _storage.Load(key) == text)
@@ -63,6 +55,23 @@ namespace Valuator.Pages
                 }
             }
             return 0;
+        }
+        private async void CreateRankCalculatorTask(string id)
+        {
+            CancellationTokenSource ct = new CancellationTokenSource();
+            ConnectionFactory cf = new ConnectionFactory();
+            using (IConnection c = cf.CreateConnection())
+            {
+                if (!ct.IsCancellationRequested)
+                {
+                    byte[] data = Encoding.UTF8.GetBytes(id);
+                    c.Publish("valuator.processing.rank", data);
+                    await Task.Delay(1000);
+                }
+
+                c.Drain();
+                c.Close();
+            }
         }
     }
 }

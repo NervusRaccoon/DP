@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+using System.Threading;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
-using Vaculator.Storage;
+using Valuator.Storage;
 
 namespace Valuator.Pages
 {
@@ -22,13 +19,14 @@ namespace Valuator.Pages
 
         public double Rank { get; set; }
         public double Similarity { get; set; }
+        public bool IsRankEmpty { get; set; }
 
         public void OnGet(string id)
         {
             _logger.LogDebug(id);
 
-             Rank = Convert.ToDouble(_storage.Load("RANK-" + id.ToString()));
-             Similarity = Convert.ToDouble(_storage.Load("SIMILARITY-" + id.ToString()));
+            Similarity = Convert.ToDouble(_storage.Load(Constants.simPref + id.ToString()));
+            Rank = Convert.ToDouble(_storage.Load(Constants.rankPref + id.ToString()));
         }
     }
 }
