@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Threading;
+using Library;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
-using Valuator.Storage;
 using NATS.Client;
 using System.Text;
 
@@ -58,16 +57,12 @@ namespace Valuator.Pages
         }
         private async void CreateRankCalculatorTask(string id)
         {
-            CancellationTokenSource ct = new CancellationTokenSource();
             ConnectionFactory cf = new ConnectionFactory();
             using (IConnection c = cf.CreateConnection())
             {
-                if (!ct.IsCancellationRequested)
-                {
-                    byte[] data = Encoding.UTF8.GetBytes(id);
-                    c.Publish("valuator.processing.rank", data);
-                    await Task.Delay(1000);
-                }
+                byte[] data = Encoding.UTF8.GetBytes(id);
+                c.Publish("valuator.processing.rank", data);
+                await Task.Delay(1000);
 
                 c.Drain();
                 c.Close();
