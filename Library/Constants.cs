@@ -1,4 +1,4 @@
-namespace Valuator
+namespace Library
 {
     public static class Constants
     {

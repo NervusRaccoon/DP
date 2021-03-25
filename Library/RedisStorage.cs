@@ -1,7 +1,7 @@
 using StackExchange.Redis;
 using System.Collections.Generic;
 
-namespace Valuator.Storage
+namespace Library
 {
     public class RedisStorage: IStorage
     {
