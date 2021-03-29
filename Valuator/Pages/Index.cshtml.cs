@@ -38,6 +38,7 @@ namespace Valuator.Pages
             double similarity = GetSimilarity(text, id);
             _storage.Store(similarityKey, similarity.ToString());
 
+            PublishSimilarityCalculate(id, similarity);
             CreateRankCalculatorTask(id);
 
             return Redirect($"summary?id={id}");
@@ -54,6 +55,20 @@ namespace Valuator.Pages
                 }
             }
             return 0;
+        }
+        private async void PublishSimilarityCalculate(string id, double similarity)
+        {
+            ConnectionFactory cf = new ConnectionFactory();
+            using (IConnection c = cf.CreateConnection())
+            {
+                string similarity_str = id + " " + similarity.ToString();
+                byte[] data = Encoding.UTF8.GetBytes(similarity_str);
+                c.Publish("valuator.processing.similarity", data);
+                await Task.Delay(1000);
+
+                c.Drain();
+                c.Close();
+            }
         }
         private async void CreateRankCalculatorTask(string id)
         {
