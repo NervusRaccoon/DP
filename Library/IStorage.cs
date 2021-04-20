@@ -4,8 +4,11 @@ namespace Library
 {
     public interface IStorage
     {
-        void Store(string key, string value);
-        string Load(string key);
-        List<string> GetValues(string prefix);
+        void StoreShardKey(string id, string shardKey);
+        string GetShardKey(string id);
+        void Store(string key, string shardKey, string value);
+        string Load(string key, string shardKey);  
+        void StoreToSet(string setId, string shardKey, string value);
+        bool IsValueExist(string setId, string value);
     }
 }

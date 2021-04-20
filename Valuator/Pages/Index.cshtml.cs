@@ -25,18 +25,23 @@ namespace Valuator.Pages
 
         }
 
-        public IActionResult OnPost(string text)
+        public IActionResult OnPost(string text, string shardKey)
         {
             _logger.LogDebug(text);
 
             string id = Guid.NewGuid().ToString();
+            
+            _storage.StoreShardKey(id, shardKey); 
 
             string textKey = Constants.textPref + id;
-            _storage.Store(textKey, text);
+            _storage.Store(textKey, shardKey, text);
 
             string similarityKey = Constants.simPref + id;
             double similarity = GetSimilarity(text, id);
-            _storage.Store(similarityKey, similarity.ToString());
+            _storage.Store(similarityKey, shardKey, similarity.ToString());
+            _storage.StoreToSet(Constants.setKey, shardKey, text);
+
+            _logger.LogDebug($"LOOKUP: {id}, {shardKey}");
 
             PublishSimilarityCalculate(id, similarity);
             CreateRankCalculatorTask(id);
@@ -45,16 +50,7 @@ namespace Valuator.Pages
         }
         private double GetSimilarity(string text, string id)
         {
-            id = Constants.textPref + id;
-            var keys = _storage.GetValues(Constants.textPref);
-            foreach (var key in keys)
-            {
-                if(key != id && _storage.Load(key) == text)
-                {
-                    return 1;
-                }
-            }
-            return 0;
+            return _storage.IsValueExist(Constants.setKey, text) ? 1 : 0;
         }
         private async void PublishSimilarityCalculate(string id, double similarity)
         {

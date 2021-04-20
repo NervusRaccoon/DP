@@ -4,6 +4,7 @@ using System.Text;
 using System.Linq;
 using Library;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging; 
 
 namespace RankCalculator
 {
@@ -11,18 +12,26 @@ namespace RankCalculator
     {
         static void Main(string[] args)
         {
-            IStorage storage = new RedisStorage();
-            
+            RedisStorage storage;
+            ILogger<Program> logger;
+            using (var lf = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)))
+            {   
+                storage = new RedisStorage(lf.CreateLogger<RedisStorage>());
+                logger = lf.CreateLogger<Program>();
+            }
+            //IStorage storage = new RedisStorage();
             ConnectionFactory cf = new ConnectionFactory();
             using IConnection c = cf.CreateConnection();
             var s = c.SubscribeAsync("valuator.processing.rank", "rank_calculator", (sender, args) =>
             {
                 string id = Encoding.UTF8.GetString(args.Message.Data);
+                string shardKey = storage.GetShardKey(id);
+                logger.LogDebug($"LOOKUP: {id}, {shardKey}");
                 string textKey = Constants.textPref + id;
-                var text = storage.Load(textKey);
+                var text = storage.Load(textKey, shardKey);
                 string rankKey = Constants.rankPref + id;
                 var rank = GetRank(text);
-                storage.Store(rankKey, rank.ToString());
+                storage.Store(rankKey, shardKey, rank.ToString());
                 PublishRankCalculate(id, rank);
             });
 

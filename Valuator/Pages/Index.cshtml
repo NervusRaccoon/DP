@@ -1,4 +1,5 @@
 ﻿@page
+@using Library
 @model IndexModel
 @{
     ViewData["Title"] = "Home page";
@@ -10,6 +11,15 @@
         <div class="col-10">
             <textarea name="text" rows="5" cols="50"></textarea>
             <input type="submit" />
+        </div>
+        <div class="col-10">
+            <select name="shardKey">
+                <option value=@Constants.RuShardKey>Russia</option>
+                <option value=@Constants.EuShardKey>France</option>
+                <option value=@Constants.EuShardKey>Germany</option>
+                <option value=@Constants.OtherShardKey>USA</option>
+                <option value=@Constants.OtherShardKey>India</option>
+            </select>
         </div>
     </form>
 </div>

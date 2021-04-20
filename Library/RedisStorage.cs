@@ -1,41 +1,64 @@
 using StackExchange.Redis;
 using System.Collections.Generic;
+using System;
+using Microsoft.Extensions.Logging;
 
 namespace Library
 {
     public class RedisStorage: IStorage
     {
+        private readonly ILogger<RedisStorage> _logger;
         private IConnectionMultiplexer _connection;
         private IDatabase _db;
         private string _host = "localhost";
-        private int _port = 6379;
+        private readonly string _ru = Environment.GetEnvironmentVariable("DB_RUS", EnvironmentVariableTarget.User);
+        private readonly string _eu = Environment.GetEnvironmentVariable("DB_EU", EnvironmentVariableTarget.User);
+        private readonly string _other = Environment.GetEnvironmentVariable("DB_OTHER", EnvironmentVariableTarget.User);
+        private readonly Dictionary<string, IDatabase> _shardConnections;
 
-
-        public RedisStorage()
+        public RedisStorage(ILogger<RedisStorage> logger)
         {
+            _logger = logger;
             _connection = ConnectionMultiplexer.Connect(_host);
             _db = _connection.GetDatabase();
+            _shardConnections = new Dictionary<string, IDatabase>();
+            _shardConnections.Add(Constants.RuShardKey, ConnectionMultiplexer.Connect(_ru).GetDatabase());
+            _shardConnections.Add(Constants.EuShardKey, ConnectionMultiplexer.Connect(_eu).GetDatabase());
+            _shardConnections.Add(Constants.OtherShardKey, ConnectionMultiplexer.Connect(_other).GetDatabase());
         }
-
-        public void Store(string key, string value)
+        public void StoreShardKey(string id, string shardKey)
         {
-            _db.StringSet(key, value);
+            _db.StringSet(id, shardKey);
         }
-
-        public string Load(string key)
-        {
-            return _db.StringGet(key);
+        public string GetShardKey(string id)
+        {   
+            return _db.StringGet(id);
         }
-
-        public List<string> GetValues(string prefix)
+        public void Store(string key, string shardKey, string value)
         {
-            var server = _connection.GetServer(_host, _port);
-            List<string> keys = new List<string>();
-            foreach (var key in server.Keys(pattern: prefix + "*"))
+            IDatabase shardConnection = _shardConnections[shardKey];
+            shardConnection.StringSet(key, value);
+        }
+        public string Load(string key, string shardKey)
+        {
+            IDatabase shardConnection = _shardConnections[shardKey];
+            return shardConnection.StringGet(key);
+        }
+        public void StoreToSet(string setId, string shardKey, string value)
+        {
+            IDatabase shardConnection = _shardConnections[shardKey];
+            shardConnection.SetAdd(setId, value);
+        }
+        public bool IsValueExist(string setId, string value)
+        {
+            foreach (var connection in _shardConnections)
             {
-                keys.Add(key);
+                if (connection.Value.SetContains(setId, value))
+                {
+                    return true;
+                }
             }
-            return keys;
+            return false;
         }
     }
 }
