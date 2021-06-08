@@ -55,54 +55,36 @@ namespace Chain
                 }
             }
         }
-        private static void Initiator(string x)
+        private static void Initiator(int x)
         {
-            sender.Send(Encoding.UTF8.GetBytes(x));
+            sender.Send(BitConverter.GetBytes(x), BitConverter.GetBytes(x).Length, SocketFlags.DontRoute);
 
             Socket handler = listener.Accept();
             byte[] buf = new byte[1024];
-            string data = null;
-            do
-            {
-                int bytes = handler.Receive(buf);
-                data += Encoding.UTF8.GetString(buf, 0, bytes);
-            }
-            while (handler.Available > 0);
-            string y = Encoding.UTF8.GetString(buf);
+            int bytes = handler.Receive(buf);
+            int y = BitConverter.ToInt32(buf);
             x = y;
             Console.WriteLine(x);
 
-            sender.Send(Encoding.UTF8.GetBytes(Math.Max(Convert.ToInt32(x), Convert.ToInt32(y)).ToString()));
+            sender.Send(BitConverter.GetBytes(Math.Max(x, y)), BitConverter.GetBytes(Math.Max(x, y)).Length, SocketFlags.DontRoute);
 
             handler.Shutdown(SocketShutdown.Both);
             handler.Close();
             Console.ReadLine();
         }
-        private static void Normal(string x)
+        private static void Normal(int x)
         {
             Socket handler = listener.Accept(); 
-            byte[] buf = new byte[4];
-            string data = null;
-            do
-            {
-                int bytes = handler.Receive(buf);
-                data += Encoding.UTF8.GetString(buf, 0, bytes);
-            }
-            while (handler.Available > 0);
-            string y = Encoding.UTF8.GetString(buf);
+            byte[] buf = new byte[1024];
+            int bytes = handler.Receive(buf);
+            int y = BitConverter.ToInt32(buf);
 
-            sender.Send(Encoding.UTF8.GetBytes(Math.Max(Convert.ToInt32(x), Convert.ToInt32(y)).ToString()));
+            sender.Send(BitConverter.GetBytes(Math.Max(x, y)), BitConverter.GetBytes(Math.Max(x, y)).Length, SocketFlags.DontRoute);
 
-            data = null;
-            do
-            {
-                int bytes = handler.Receive(buf);
-                data += Encoding.UTF8.GetString(buf, 0, bytes);
-            }
-            while (handler.Available > 0);
+            bytes = handler.Receive(buf);
             
-            sender.Send(buf);
-            Console.WriteLine(Encoding.UTF8.GetString(buf));
+            sender.Send(buf, buf.Length, SocketFlags.DontRoute);
+            Console.WriteLine(BitConverter.ToInt32(buf));
 
             handler.Shutdown(SocketShutdown.Both);
             handler.Close();
@@ -112,7 +94,7 @@ namespace Chain
         {
             CreateSocket(Convert.ToInt32(args[0]), args[1], Convert.ToInt32(args[2]));
             bool first = args.Length == 4 && args[3] == "true";
-            string x = Console.ReadLine();
+            int x = Convert.ToInt32(Console.ReadLine());
             if (first) 
             {
                 Initiator(x);
